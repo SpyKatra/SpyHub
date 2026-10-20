@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Spy Hub</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f3f5f9;--card:#fff;--tx:#14213d;--mut:#6b7691;--ac:#1d4ed8;--ok:#15803d;--bd:#e1e6ef;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1424;--card:#16203a;--tx:#eaf0ff;--mut:#9aa7c7;--ac:#6ea0ff;--ok:#4ade80;--bd:#26335a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1424;--card:#16203a;--tx:#eaf0ff;--mut:#9aa7c7;--ac:#6ea0ff;--ok:#4ade80;--bd:#26335a;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,"Segoe UI",sans-serif;padding:14px 14px 40px}
+h1{font-size:22px;margin:4px 0 12px}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:12px}
+.c h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 8px}
+.big{font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.mut{color:var(--mut);font-size:13px}
+.r{display:flex;gap:8px;margin-bottom:8px;align-items:center}.r>*{flex:1;min-width:0}
+input,select,button,textarea{font:inherit;font-size:16px;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);width:100%}
+button{background:var(--ac);color:#fff;border:0;font-weight:600}
+button.g{background:var(--bg);color:var(--tx);border:1px solid var(--bd)}
+button.x{background:none;color:var(--mut);width:auto;padding:4px 8px;border:0}
+.li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--bd);gap:8px}
+.done{text-decoration:line-through;color:var(--mut)}
+textarea{min-height:46vh;resize:vertical}
+.u{flex:0 0 52px;color:var(--mut);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.t{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--card);color:var(--tx);border:1px solid var(--bd);font-size:13px;font-weight:600;padding:6px;border-radius:16px}
+.t span{font-size:32px}
+.hd{display:flex;align-items:center;gap:10px;margin-bottom:8px}.hd button{width:auto;padding:8px 12px}.hd h1{margin:0}
+.strip{display:flex;gap:10px;margin-bottom:14px}.strip div{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:8px 12px}
+.strip b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.big2{font-size:28px;font-weight:700}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const K='spyhub2';let S={};
+try{S=JSON.parse(localStorage.getItem(K))||{}}catch(e){}
+S=Object.assign({w:[],note:'',todo:[],cd:[],golf:[],bag:['Passeport','Chargeur et câble','Adaptateur de prise','Assurance voyage','Carte de crédit'].map(t=>({t,d:false})),rate:'',plan:'',games:[],ideas:[],car:{km:0,it:[]},mats:[],dec:'',links:[]},S);
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+let tab='',run=false,t0=0,el=0;
+const go=t=>{tab=t;render();scrollTo(0,0)};
+const tf=z=>new Intl.DateTimeFormat('fr-CA',{timeZone:z,hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
+const df=z=>new Intl.DateTimeFormat('fr-CA',{timeZone:z,weekday:'long',day:'numeric',month:'long'}).format(new Date());
+const fmt=ms=>{const s=Math.floor(ms/1000);return pad(Math.floor(s/60))+':'+pad(s%60)};
+const tm=s=>{const a=s.split(':');return +a[0]*60+ +a[1]};
+const hm=n=>{n=((Math.round(n)%1440)+1440)%1440;return pad(Math.floor(n/60))+':'+pad(n%60)};
+const H=h=>Math.floor(h)+'h'+pad(Math.round(h%1*60));
+const rd=n=>String(+n.toFixed(3));
+const tzo=()=>{const d=new Date(),p=new Intl.DateTimeFormat('en-US',{timeZone:'America/Toronto',hourCycle:'h23',year:'numeric',month:'numeric',day:'numeric',hour:'numeric',minute:'numeric'}).formatToParts(d).reduce((o,x)=>(o[x.type]=+x.value,o),{});return Math.round((Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute)-Math.floor(d/6e4)*6e4)/6e4)};
+const FE=[['g','⛳','Golf',vg],['y','🌍','Voyages',vy],['m','🎮','Gaming',vm],['a','🚗','Auto',va],['b','🔨','Bricolage',vb],['i','💡','Idées et projets',vi],['z','🎲','Décideur',vz],['l','🔗','Raccourcis',vl],['h','🕐','Heure',vh],['c','🔄','Convertir',vc],['w','📦','Charge',vw],['n','📝','Notes du quart',vn],['t','⏱️','Calcul d’heures',vt],['v','🌬️','Vent traversier',vv],['k','✅','Tâches',vk],['d','⏳','Compte à rebours',vd],['o','🔤','Alphabet OACI',vo]];
+function vhome(){return `<h1>✈️ Spy Hub</h1>
+  <div class="strip"><div><span class="mut">Québec</span><b id="sq"></b></div><div><span class="mut">UTC (Z)</span><b id="sz"></b></div></div>
+  <div class="grid">${FE.map(f=>`<button class="t" onclick="go('${f[0]}')"><span>${f[1]}</span>${f[2]}</button>`).join('')}</div>`}
+function vh(){return `<div class="c"><h2>UTC (Zulu)</h2><div class="big" id="zu"></div></div>
+  <div class="c"><h2>Québec</h2><div class="big" id="zq"></div><div class="mut" id="dq"></div></div>
+  <div class="c"><h2>Europe (Paris, Prague)</h2><div class="big" id="ze"></div></div>
+  <div class="c"><h2>Chronomètre</h2><div class="big" id="ch">00:00</div>
+  <div class="r" style="margin-top:8px"><button onclick="chr()" id="cb">${run?'Pause':'Démarrer'}</button><button class="g" onclick="run=false;el=0;render()">Zéro</button></div></div>`}
+function chr(){if(run){el+=Date.now()-t0;run=false}else{t0=Date.now();run=true}render()}
+const st=(id,v)=>{const e=$(id);if(e)e.textContent=v};
+function tick(){
+  st('sq',tf('America/Toronto'));st('sz',tf('UTC'));
+  st('zu',tf('UTC'));st('zq',tf('America/Toronto'));st('dq',df('America/Toronto'));st('ze',tf('Europe/Paris'));
+  st('ch',fmt(el+(run?Date.now()-t0:0)));
+}
+const CV=[['Kilogrammes ↔ livres','kg','lb',v=>v*2.20462,v=>v/2.20462],
+['Celsius ↔ Fahrenheit','°C','°F',v=>v*9/5+32,v=>(v-32)*5/9],
+['Pieds ↔ mètres','ft','m',v=>v*.3048,v=>v/.3048],
+['Milles marins ↔ kilomètres','NM','km',v=>v*1.852,v=>v/1.852],
+['Nœuds ↔ km/h','kt','km/h',v=>v*1.852,v=>v/1.852],
+['hPa ↔ inHg','hPa','inHg',v=>v*.02953,v=>v/.02953],
+['Litres ↔ gallons US','L','gal',v=>v*.264172,v=>v/.264172]];
+function vc(){return CV.map((c,i)=>`<div class="c"><h2>${c[0]}</h2>
+  <div class="r"><input id="a${i}" type="number" inputmode="decimal" oninput="cv(${i},0)"><div class="u">${c[1]}</div></div>
+  <div class="r"><input id="b${i}" type="number" inputmode="decimal" oninput="cv(${i},1)"><div class="u">${c[2]}</div></div></div>`).join('')}
+function cv(i,s){const v=parseFloat($(s?'b'+i:'a'+i).value),o=$(s?'a'+i:'b'+i);o.value=isNaN(v)?'':rd(CV[i][s?4:3](v))}
+function vw(){
+  const kg=S.w.reduce((t,x)=>t+x.kg,0);
+  return `<div class="c"><h2>Poids total</h2><div class="big">${rd(kg)} kg</div>
+  <div class="mut">${rd(kg*2.20462)} lb · ${S.w.length} pièce(s)</div></div>
+  <div class="c"><h2>Ajouter une pièce</h2>
+  <div class="r"><input id="wl" placeholder="Nom (ULD, palette…)"></div>
+  <div class="r"><input id="wv" type="number" inputmode="decimal" placeholder="Poids"><select id="wu"><option>kg</option><option>lb</option></select></div>
+  <button onclick="addW()">Ajouter</button></div>
+  <div class="c"><h2>Liste</h2>${S.w.map((x,i)=>`<div class="li"><div>${esc(x.l)}</div><div>${rd(x.kg)} kg<button class="x" onclick="S.w.splice(${i},1);save();render()">✕</button></div></div>`).join('')||'<div class="mut">Aucune pièce</div>'}
+  ${S.w.length?'<button class="g" style="margin-top:8px" onclick="S.w=[];save();render()">Tout effacer</button>':''}</div>`}
+function addW(){const v=parseFloat($('wv').value);if(!v)return;
+  S.w.push({l:$('wl').value||'Pièce '+(S.w.length+1),kg:$('wu').value=='lb'?v/2.20462:v});save();render()}
+function vn(){return `<div class="r"><button class="g" onclick="stamp()">+ Horodatage</button><button class="g" onclick="S.note='';save();render()">Effacer</button></div>
+  <textarea id="nt" placeholder="Vols, retards, rappels…" oninput="S.note=this.value;save()">${esc(S.note)}</textarea>`}
+function stamp(){const t=$('nt');
+  t.value+=(t.value&&!t.value.endsWith('\n')?'\n':'')+'['+tf('America/Toronto').slice(0,5)+' L / '+tf('UTC').slice(0,5)+' Z] ';
+  S.note=t.value;save();t.focus()}
+function vt(){return `<div class="c"><h2>Durée entre deux heures</h2>
+  <div class="r"><input id="t1" type="time" oninput="ct()"><input id="t2" type="time" oninput="ct()"></div>
+  <div class="big2" id="r1">–</div><div class="mut">Gère le passage de minuit</div></div>
+  <div class="c"><h2>Heure ± minutes</h2>
+  <div class="r"><input id="t3" type="time" oninput="ct()"><input id="t4" type="number" inputmode="numeric" placeholder="± min" oninput="ct()"></div>
+  <div class="big2" id="r2">–</div></div>
+  <div class="c"><h2>Québec ↔ UTC</h2>
+  <div class="r"><input id="t5" type="time" oninput="ct()"><select id="t6" onchange="ct()"><option value="z">Québec → UTC</option><option value="l">UTC → Québec</option></select></div>
+  <div class="big2" id="r3">–</div><div class="mut">Selon le décalage actuel (heure d’été ou d’hiver)</div></div>`}
+function ct(){
+  const a=$('t1').value,b=$('t2').value,s=$('t3').value,n=+$('t4').value||0,z=$('t5').value,o=tzo();
+  st('r1',a&&b?H(((tm(b)-tm(a)+1440)%1440)/60):'–');
+  st('r2',s?hm(tm(s)+n):'–');
+  st('r3',z?hm(tm(z)+($('t6').value=='z'?-o:o)):'–')}
+function vv(){return `<div class="c"><h2>Piste et vent</h2>
+  <div class="r"><input id="v1" type="number" inputmode="numeric" placeholder="Piste (ex. 06)" oninput="cw()"></div>
+  <div class="r"><input id="v2" type="number" inputmode="numeric" placeholder="Direction du vent °" oninput="cw()"><input id="v3" type="number" inputmode="numeric" placeholder="Vitesse (kt)" oninput="cw()"></div></div>
+  <div class="c"><h2>Composante de face</h2><div class="big2" id="v4">–</div></div>
+  <div class="c"><h2>Composante traversière</h2><div class="big2" id="v5">–</div></div>`}
+function cw(){const r=parseFloat($('v1').value)*10,d=parseFloat($('v2').value),s=parseFloat($('v3').value);
+  if([r,d,s].some(isNaN)){st('v4','–');st('v5','–');return}
+  const a=(d-r)*Math.PI/180,h=s*Math.cos(a),x=s*Math.sin(a);
+  st('v4',Math.abs(Math.round(h))+' kt '+(h>=0?'de face':'arrière'));
+  st('v5',Math.abs(Math.round(x))+' kt '+(Math.abs(x)<.5?'':x>0?'de droite':'de gauche'))}
+function vk(){return `<div class="c"><div class="r"><input id="kt" placeholder="Nouvelle tâche" onkeydown="if(event.key=='Enter')addK()"><button style="flex:0 0 90px" onclick="addK()">Ajouter</button></div></div>
+  <div class="c">${S.todo.map((x,i)=>`<div class="li"><div class="${x.d?'done':''}" style="flex:1" onclick="S.todo[${i}].d=!S.todo[${i}].d;save();render()">${x.d?'☑️':'⬜'} ${esc(x.t)}</div><button class="x" onclick="S.todo.splice(${i},1);save();render()">✕</button></div>`).join('')||'<div class="mut">Rien à faire pour l’instant</div>'}
+  ${S.todo.some(x=>x.d)?'<button class="g" style="margin-top:8px" onclick="S.todo=S.todo.filter(x=>!x.d);save();render()">Effacer les terminées</button>':''}</div>`}
+function addK(){const v=$('kt').value.trim();if(!v)return;S.todo.push({t:v,d:false});save();render()}
+function vd(){const n=new Date(),t0d=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+  const L=S.cd.map((x,i)=>({...x,i,n:Math.round((new Date(x.d+'T00:00')-t0d)/864e5)})).sort((a,b)=>a.n-b.n);
+  return `<div class="c"><h2>Nouvel événement</h2><div class="r"><input id="dn" placeholder="Nom (voyage, congé…)"></div>
+  <div class="r"><input id="dd" type="date"></div><button onclick="addD()">Ajouter</button></div>
+  <div class="c">${L.map(x=>`<div class="li"><div>${esc(x.t)}<div class="mut">${x.d}</div></div><div><b class="big2">${x.n<0?'passé':x.n}</b> ${x.n<0?'':'j'}<button class="x" onclick="S.cd.splice(${x.i},1);save();render()">✕</button></div></div>`).join('')||'<div class="mut">Aucun événement</div>'}</div>`}
+function addD(){const t=$('dn').value.trim(),d=$('dd').value;if(!t||!d)return;S.cd.push({t,d});save();render()}
+const AL='Alfa Bravo Charlie Delta Echo Foxtrot Golf Hotel India Juliett Kilo Lima Mike November Oscar Papa Quebec Romeo Sierra Tango Uniform Victor Whiskey X-ray Yankee Zulu'.split(' ');
+const DG='Zéro Wun Too Tree Fower Fife Six Seven Ait Niner'.split(' ');
+function vo(){return `<div class="c"><input id="o1" placeholder="Tape un code ou un nom (ex. YQB, C-GXYZ)" autocapitalize="characters" oninput="ph()"></div><div class="c" id="o2"><div class="mut">Le résultat s’affiche ici</div></div>`}
+function ph(){const v=$('o1').value.toUpperCase();
+  $('o2').innerHTML=[...v].map(c=>/[A-Z]/.test(c)?`<div class="li"><b>${c}</b><span>${AL[c.charCodeAt(0)-65]}</span></div>`:/[0-9]/.test(c)?`<div class="li"><b>${c}</b><span>${DG[+c]}</span></div>`:'').join('')||'<div class="mut">Le résultat s’affiche ici</div>'}
+const today=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function cl(k,ph){return `<div class="r"><input id="c${k}" placeholder="${ph}" onkeydown="if(event.key=='Enter')cla('${k}')"><button style="flex:0 0 90px" onclick="cla('${k}')">Ajouter</button></div>`+S[k].map((x,i)=>`<div class="li"><div class="${x.d?'done':''}" style="flex:1" onclick="S['${k}'][${i}].d=!S['${k}'][${i}].d;save();render()">${x.d?'☑️':'⬜'} ${esc(x.t)}</div><button class="x" onclick="S['${k}'].splice(${i},1);save();render()">✕</button></div>`).join('')}
+function cla(k){const v=$('c'+k).value.trim();if(!v)return;S[k].push({t:v,d:false});save();render()}
+function vg(){const g=S.golf,n=g.length,dif=x=>(x.s-x.r)*113/x.l,d=g.map(dif).sort((a,b)=>a-b),k=Math.min(8,Math.max(1,Math.round(n*.4))),est=n?d.slice(0,k).reduce((t,x)=>t+x,0)/k:0;
+  return `<div class="c"><h2>Moyenne</h2><div class="big">${n?(g.reduce((t,x)=>t+x.s,0)/n).toFixed(1):'–'}</div><div class="mut">${n} partie(s) · meilleur ${n?Math.min(...g.map(x=>x.s)):'–'} · indice estimé ${n>=3?est.toFixed(1):'–'} (non officiel)</div></div>
+  <div class="c"><h2>Ajouter une partie</h2><div class="r"><input id="gd" type="date" value="${today()}"><input id="gc" placeholder="Parcours"></div>
+  <div class="r"><input id="gs" type="number" inputmode="numeric" placeholder="Score"><input id="gp" type="number" inputmode="numeric" value="72" placeholder="Normale"></div>
+  <div class="r"><input id="gr" type="number" inputmode="decimal" placeholder="Cote parcours (facultatif)"><input id="gl" type="number" inputmode="numeric" placeholder="Slope (113)"></div>
+  <button onclick="addG()">Enregistrer</button></div>
+  <div class="c"><h2>Parties</h2>${g.slice(-10).reverse().map(x=>`<div class="li"><div>${x.d.slice(5)} · ${esc(x.c)}</div><div>${x.s} <span class="mut">(diff. ${dif(x).toFixed(1)})</span><button class="x" onclick="S.golf=S.golf.filter(y=>y.id!=${x.id});save();render()">✕</button></div></div>`).join('')||'<div class="mut">Aucune partie</div>'}</div>`}
+function addG(){const s=+$('gs').value;if(!s)return;const p=+$('gp').value||72;
+  S.golf.push({id:Date.now(),d:$('gd').value||today(),c:$('gc').value||'Parcours',s,p,r:+$('gr').value||p,l:+$('gl').value||113});save();render()}
+function vy(){return `<div class="c"><h2>Valise</h2>${cl('bag','Ajouter un item')}<button class="g" style="margin-top:8px" onclick="S.bag.forEach(x=>x.d=false);save();render()">Tout décocher</button></div>
+  <div class="c"><h2>Devises</h2><div class="r"><input id="y1" type="number" inputmode="decimal" step="any" placeholder="Taux : 1 devise = ? $ CA" value="${S.rate}" oninput="yc(0)"></div>
+  <div class="r"><input id="y2" type="number" inputmode="decimal" step="any" placeholder="Devise" oninput="yc(1)"><input id="y3" type="number" inputmode="decimal" step="any" placeholder="$ CA" oninput="yc(2)"></div><div class="mut">Entre le taux du jour toi-même (l’appli fonctionne sans connexion).</div></div>
+  <div class="c"><h2>Itinéraire</h2><textarea style="min-height:30vh" placeholder="Jour 1 : …" oninput="S.plan=this.value;save()">${esc(S.plan)}</textarea></div>`}
+function yc(n){const r=parseFloat($('y1').value);if(n==0){S.rate=isNaN(r)?'':r;save();return}if(!r)return;
+  if(n==1){const v=parseFloat($('y2').value);$('y3').value=isNaN(v)?'':rd(v*r)}else{const v=parseFloat($('y3').value);$('y2').value=isNaN(v)?'':rd(v/r)}}
+const SG=['À jouer','En cours','Terminé'],SI=['Idée','En cours','Lancé'];
+function sl(k,st2,ph){return `<div class="c"><div class="r"><input id="s${k}" placeholder="${ph}" onkeydown="if(event.key=='Enter')sa('${k}')"><button style="flex:0 0 90px" onclick="sa('${k}')">Ajouter</button></div></div>`+st2.map((s,j)=>`<div class="c"><h2>${s}</h2>${S[k].filter(x=>x.s==j).map(x=>`<div class="li"><div style="flex:1" onclick="sc('${k}',${x.id},${st2.length})">${esc(x.t)}</div><button class="x" onclick="S.${k}=S.${k}.filter(y=>y.id!=${x.id});save();render()">✕</button></div>`).join('')||'<div class="mut">Vide</div>'}</div>`).join('')+'<div class="mut">Touche un élément pour changer son statut.</div>'}
+function sa(k){const v=$('s'+k).value.trim();if(!v)return;S[k].push({id:Date.now(),t:v,s:0});save();render()}
+function sc(k,id,n){const x=S[k].find(y=>y.id==id);x.s=(x.s+1)%n;save();render()}
+function vm(){return sl('games',SG,'Nom du jeu')}
+function vi(){return sl('ideas',SI,'Idée d’appli, de mod ou de revenu')}
+function va(){const C=S.car;return `<div class="c"><h2>Kilométrage actuel</h2><input type="number" inputmode="numeric" placeholder="km" value="${C.km||''}" onchange="S.car.km=+this.value;save();render()"></div>
+  <div class="c"><h2>Ajouter un entretien</h2><div class="r"><input id="an" placeholder="Nom (huile, pneus…)"></div>
+  <div class="r"><input id="ak" type="number" inputmode="numeric" placeholder="Fait à (km)"><input id="ai" type="number" inputmode="numeric" placeholder="Intervalle (km)"></div><button onclick="aadd()">Ajouter</button></div>
+  <div class="c"><h2>Entretiens</h2>${C.it.map((x,i)=>{const r=x.k+x.i-C.km;return `<div class="li"><div>${esc(x.n)}<div class="mut">prochain à ${x.k+x.i} km</div></div><div style="color:${r<0?'#b91c1c':r<1000?'#b45309':'var(--ok)'}">${r<0?'En retard de '+(-r):r} km<button class="x" onclick="S.car.it[${i}].k=S.car.km;save();render()">✔</button><button class="x" onclick="S.car.it.splice(${i},1);save();render()">✕</button></div></div>`}).join('')||'<div class="mut">Aucun entretien</div>'}<div class="mut">✔ = fait au kilométrage actuel</div></div>`}
+function aadd(){const n=$('an').value.trim(),k=+$('ak').value,i=+$('ai').value;if(!n||!i)return;S.car.it.push({n,k,i});save();render()}
+function vb(){return `<div class="c"><h2>Surface (pieds)</h2><div class="r"><input id="b1" type="number" inputmode="decimal" placeholder="Longueur" oninput="bc(1)"><input id="b2" type="number" inputmode="decimal" placeholder="Largeur" oninput="bc(1)"></div><div class="big2" id="b3">–</div></div>
+  <div class="c"><h2>Peinture</h2><div class="r"><input id="b4" type="number" inputmode="decimal" placeholder="Surface (pi²)" oninput="bc(0)"><input id="b5" type="number" inputmode="numeric" value="2" oninput="bc(0)"></div><div class="mut">Surface et nombre de couches (≈ 350 pi² par gallon)</div><div class="big2" id="b6">–</div></div>
+  <div class="c"><h2>Pouces → fraction</h2><input id="b7" type="number" inputmode="decimal" step="any" placeholder="Pouces décimaux" oninput="bc(0)"><div class="big2" id="b8" style="margin-top:8px">–</div></div>
+  <div class="c"><h2>Matériaux</h2>${cl('mats','Ajouter un matériau')}</div>`}
+function bc(f){const L=parseFloat($('b1').value),W=parseFloat($('b2').value),a=L*W;
+  if(f&&a){$('b4').value=rd(a)}
+  st('b3',a?a.toFixed(1)+' pi² · '+(a*.092903).toFixed(2)+' m²':'–');
+  const s=parseFloat($('b4').value),c=parseFloat($('b5').value)||1,g=s*c/350;
+  st('b6',s?g.toFixed(1)+' gal ≈ '+(g*3.785).toFixed(1)+' L':'–');
+  const x=parseFloat($('b7').value);if(isNaN(x)){st('b8','–');return}
+  let w=Math.floor(x),n=Math.round((x-w)*16);if(n==16){w++;n=0}
+  const q=n?n/gcd(n,16)+'/'+16/gcd(n,16):'';st('b8',(w?w+' ':'')+q+' po'||'0 po')}
+function vz(){return `<div class="c"><h2>Options (une par ligne)</h2><textarea style="min-height:22vh" placeholder="Pizza&#10;Sushi&#10;Poulet" oninput="S.dec=this.value;save()">${esc(S.dec)}</textarea><button style="margin-top:8px" onclick="zp()">🎲 Tirer au sort</button></div>
+  <div class="c"><h2>Résultat</h2><div class="big2" id="zr">–</div></div>
+  <div class="r"><button class="g" onclick="zs('Pile','Face')">Pile ou face</button><button class="g" onclick="zs(1,2,3,4,5,6)">Dé</button></div>`}
+function zp(){const o=S.dec.split('\n').map(x=>x.trim()).filter(Boolean);st('zr',o.length?o[Math.random()*o.length|0]:'Ajoute des options')}
+function zs(...a){st('zr',a[Math.random()*a.length|0])}
+function vl(){return `<div class="c"><div class="r"><input id="ln" placeholder="Nom"><input id="lu" placeholder="Adresse (ex. discord.com)" autocapitalize="none"></div><button onclick="ladd()">Ajouter</button></div>
+  <div class="c">${S.links.map((x,i)=>`<div class="li"><a href="${esc(x.u)}" target="_blank" rel="noopener" style="color:var(--ac);font-weight:600;flex:1;text-decoration:none">${esc(x.n)} ↗</a><button class="x" onclick="S.links.splice(${i},1);save();render()">✕</button></div>`).join('')||'<div class="mut">Aucun raccourci</div>'}</div>`}
+function ladd(){const n=$('ln').value.trim(),u=$('lu').value.trim();if(!n||!u)return;S.links.push({n,u:/^https?:\/\//i.test(u)?u:'https://'+u});save();render()}
+function render(){
+  if(!tab){$('app').innerHTML=vhome();tick();return}
+  const f=FE.find(x=>x[0]==tab);
+  $('app').innerHTML=`<div class="hd"><button class="g" onclick="go('')">‹ Accueil</button><h1>${f[1]} ${f[2]}</h1></div>`+f[3]();
+  tick();
+}
+setInterval(tick,250);render();
+</script>
+</body>
+</html>
